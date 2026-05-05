@@ -42,9 +42,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       };
 
       login(mockWechatUser).then((response) => {
-        if (response.code === 200) {
+        if (response.code === 200 && response.data) {
           showToast('微信登录成功！', 'success');
-          onLogin('wechat');
+          onLogin('wechat', response.data.user);
         } else {
           showToast(response.message || '登录失败', 'error');
         }
@@ -68,9 +68,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         password,
       });
 
-      if (response.code === 200) {
+      if (response.code === 200 && response.data) {
         showToast('登录成功！', 'success');
-        onLogin('email');
+        onLogin('email', response.data.user);
       } else {
         showToast(response.message || '登录失败', 'error');
       }

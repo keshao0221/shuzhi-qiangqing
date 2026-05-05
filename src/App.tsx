@@ -25,13 +25,17 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('stats');
   const [loginType, setLoginType] = useState<'wechat' | 'email' | null>(null);
 
-  const handleLogin = async (type: 'wechat' | 'email') => {
+  const handleLogin = async (type: 'wechat' | 'email', userData?: any) => {
     setLoginType(type);
-    await login({
-      id: 'user-' + Date.now(),
-      name: type === 'wechat' ? '微信用户' : '邮箱用户',
-      points: 100,
-    });
+    if (userData) {
+      await login(userData);
+    } else {
+      await login({
+        id: 'user-' + Date.now(),
+        name: type === 'wechat' ? '微信用户' : '邮箱用户',
+        points: 100,
+      });
+    }
     setCurrentPage('stats');
   };
 

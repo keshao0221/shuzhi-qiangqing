@@ -3,13 +3,22 @@ import { prisma } from './utils/prisma';
 async function seed() {
   console.log('Seeding database...');
 
-  // 创建测试用户 test01
-  const testUser = await prisma.user.upsert({
-    where: { phone: '13800138000' },
-    update: {},
-    create: {
-      phone: '13800138000',
-      name: 'test01',
+  // 先删除所有用户数据
+  console.log('Deleting existing users...');
+  await prisma.postLike.deleteMany({});
+  await prisma.comment.deleteMany({});
+  await prisma.post.deleteMany({});
+  await prisma.workout.deleteMany({});
+  await prisma.pointsHistory.deleteMany({});
+  await prisma.redemption.deleteMany({});
+  await prisma.user.deleteMany({});
+  console.log('Deleted existing users');
+
+  // 创建测试用户 test（支持邮箱登录）
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      name: 'test',
       avatar: '',
       points: 1250,
       height: 175,
