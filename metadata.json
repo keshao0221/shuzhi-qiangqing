@@ -1,0 +1,8 @@
+{
+  "name": "数智强青",
+  "description": "数智强青：AI 辅助的青少年体质健康干预平台。",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

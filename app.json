@@ -1,0 +1,30 @@
+{
+  "name": "数智强青",
+  "version": "1.0.0",
+  "description": "AI 辅助的青少年体质健康干预平台",
+  "author": "数智强青团队",
+  "theme": {
+    "primaryColor": "#000000",
+    "accentColor": "#c3f400",
+    "backgroundColor": "#f8fafc"
+  },
+  "pages": [
+    "stats",
+    "training",
+    "fun",
+    "community",
+    "profile",
+    "redemption",
+    "workout_session"
+  ],
+  "features": {
+    "ai_vision": true,
+    "points_system": true,
+    "edu_sync": true,
+    "wechat_login": true
+  },
+  "config": {
+    "edu_api_endpoint": "https://api.edu-system.example.cn/v1",
+    "points_exchange_rate": 100
+  }
+}

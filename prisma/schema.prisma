@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  phone         String?   @unique
+  wechatOpenId  String?   @unique
+  name          String    @default("用户")
+  avatar        String?   @default("")
+  points        Int       @default(0)
+  height        Float?
+  weight        Float?
+  age           Int?
+  gender        String?   @db.VarChar(10)
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+
+  workouts      Workout[]
+  posts         Post[]
+  comments      Comment[]
+  pointsHistory PointsHistory[]
+  redemptions   Redemption[]
+}
+
+model Workout {
+  id            String    @id @default(cuid())
+  userId        String
+  sportType     String    @db.VarChar(50)
+  duration      Int       @default(0)
+  calories      Float     @default(0)
+  distance      Float     @default(0)
+  steps         Int       @default(0)
+  avgHeartRate  Int?
+  status        String    @db.VarChar(20) @default("completed")
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises     ExerciseInWorkout[]
+  motionRecords MotionRecord[]
+}
+
+model Exercise {
+  id          String               @id @default(cuid())
+  name        String
+  sets        String?
+  reps        String?
+  time        String?
+  tag         String
+  image       String
+  createdAt   DateTime             @default(now()) @db.Timestamp(6)
+
+  workouts    ExerciseInWorkout[]
+}
+
+model ExerciseInWorkout {
+  id          String   @id @default(cuid())
+  workoutId   String
+  exerciseId  String
+  completed   Boolean  @default(false)
+  order       Int      @default(0)
+
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Plan {
+  id          String    @id @default(cuid())
+  name        String
+  icon        String
+  description String?
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  exercises   PlanExercise[]
+}
+
+model PlanExercise {
+  id          String   @id @default(cuid())
+  planId      String
+  exerciseId  String
+  order       Int      @default(0)
+
+  plan        Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  userId      String
+  content     String
+  image       String?
+  likes       Int       @default(0)
+  tag         String?
+  duration    String?
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  likesList   PostLike[]
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  userId      String
+  postId      String
+  content     String
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model PostLike {
+  id          String    @id @default(cuid())
+  userId      String
+  postId      String
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model PointsHistory {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    @db.VarChar(20)
+  amount      Int
+  description String
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Gift {
+  id          String    @id @default(cuid())
+  name        String
+  image       String
+  points      Int
+  stock       Int       @default(0)
+  description String?
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  redemptions Redemption[]
+}
+
+model Redemption {
+  id          String    @id @default(cuid())
+  userId      String
+  giftId      String
+  status      String    @db.VarChar(20) @default("pending")
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gift        Gift      @relation(fields: [giftId], references: [id], onDelete: Cascade)
+}
+
+model MotionRecord {
+  id              String    @id @default(cuid())
+  workoutId       String
+  timestamp       DateTime  @db.Timestamp(6)
+  accelerationX   Float
+  accelerationY   Float
+  accelerationZ   Float
+  heartRate       Int?
+  calories        Float
+  steps           Int
+
+  workout         Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+}
