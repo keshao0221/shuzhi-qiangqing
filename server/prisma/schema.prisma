@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -20,9 +20,9 @@ model User {
   height          Float?
   weight          Float?
   age             Int?
-  gender          String?   @db.VarChar(10)
-  createdAt       DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime  @updatedAt @db.Timestamp(6)
+  gender          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   workouts      Workout[]
   posts         Post[]
@@ -35,15 +35,15 @@ model User {
 model Workout {
   id            String    @id @default(cuid())
   userId        String
-  sportType     String    @db.VarChar(50)
+  sportType     String
   duration      Int       @default(0)
   calories      Float     @default(0)
   distance      Float     @default(0)
   steps         Int       @default(0)
   avgHeartRate  Int?
-  status        String    @db.VarChar(20) @default("completed")
-  createdAt     DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+  status        String    @default("completed")
+  createdAt     DateTime  @default(now()) 
+  updatedAt     DateTime  @updatedAt 
 
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   exercises     ExerciseInWorkout[]
@@ -58,7 +58,7 @@ model Exercise {
   time        String?
   tag         String
   image       String
-  createdAt   DateTime             @default(now()) @db.Timestamp(6)
+  createdAt   DateTime             @default(now()) 
 
   workouts    ExerciseInWorkout[]
   plans       PlanExercise[]
@@ -80,7 +80,7 @@ model Plan {
   name        String    @unique
   icon        String
   description String?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   exercises   PlanExercise[]
 }
@@ -103,7 +103,7 @@ model Post {
   likes       Int       @default(0)
   tag         String?
   duration    String?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments    Comment[]
@@ -115,7 +115,7 @@ model Comment {
   userId      String
   postId      String
   content     String
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -125,7 +125,7 @@ model PostLike {
   id          String    @id @default(cuid())
   userId      String
   postId      String
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -136,10 +136,10 @@ model PostLike {
 model PointsHistory {
   id          String    @id @default(cuid())
   userId      String
-  type        String    @db.VarChar(20)
+  type        String
   amount      Int
   description String
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -151,7 +151,7 @@ model Gift {
   points      Int
   stock       Int       @default(0)
   description String?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) 
 
   redemptions Redemption[]
 }
@@ -160,8 +160,8 @@ model Redemption {
   id          String    @id @default(cuid())
   userId      String
   giftId      String
-  status      String    @db.VarChar(20) @default("pending")
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now()) 
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   gift        Gift      @relation(fields: [giftId], references: [id], onDelete: Cascade)
@@ -170,7 +170,7 @@ model Redemption {
 model MotionRecord {
   id              String    @id @default(cuid())
   workoutId       String
-  timestamp       DateTime  @db.Timestamp(6)
+  timestamp       DateTime  
   accelerationX   Float
   accelerationY   Float
   accelerationZ   Float

@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { login, register } from '../lib/api';
 
 interface LoginProps {
-  onLogin: (type: 'wechat' | 'email') => void;
+  onLogin: (type: 'wechat' | 'email', userData?: any) => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -44,7 +44,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       login(mockWechatUser).then((response) => {
         if (response.code === 200 && response.data) {
           showToast('微信登录成功！', 'success');
-          onLogin('wechat', response.data.user);
+          onLogin('wechat', (response.data as any).user);
         } else {
           showToast(response.message || '登录失败', 'error');
         }
@@ -70,7 +70,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       if (response.code === 200 && response.data) {
         showToast('登录成功！', 'success');
-        onLogin('email', response.data.user);
+        onLogin('email', (response.data as any).user);
       } else {
         showToast(response.message || '登录失败', 'error');
       }

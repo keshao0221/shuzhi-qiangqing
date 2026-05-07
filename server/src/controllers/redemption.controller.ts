@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
+import { redeemGiftValidator, getPointsHistoryValidator } from '../validators/redemption.validator';
 import { success, created, badRequest } from '../utils/response';
 
 export const redemptionController = {
@@ -14,10 +15,10 @@ export const redemptionController = {
 
   async redeemGift(req: Request, res: Response) {
     try {
-      const { giftId } = req.body;
+      const input = redeemGiftValidator.parse(req.body);
       const userId = req.user!.id;
 
-      const gift = await prisma.gift.findUnique({ where: { id: giftId } });
+      const gift = await prisma.gift.findUnique({ where: { id: input.giftId } });
       if (!gift) {
         return badRequest(res, '礼品不存在');
       }
@@ -37,11 +38,11 @@ export const redemptionController = {
           data: { points: { decrement: gift.points } },
         }),
         prisma.gift.update({
-          where: { id: giftId },
+          where: { id: input.giftId },
           data: { stock: { decrement: 1 } },
         }),
         prisma.redemption.create({
-          data: { userId, giftId },
+          data: { userId, giftId: input.giftId },
         }),
         prisma.pointsHistory.create({
           data: {
@@ -76,9 +77,22 @@ export const redemptionController = {
   async getPointsHistory(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
+      const input = getPointsHistoryValidator.parse({
+        type: req.query.type,
+        limit: parseInt(req.query.limit as string) || 20,
+        offset: parseInt(req.query.offset as string) || 0,
+      });
+
+      const where: { userId: string; type?: string } = { userId };
+      if (input.type !== 'all') {
+        where.type = input.type;
+      }
+
       const history = await prisma.pointsHistory.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: 'desc' },
+        take: input.limit,
+        skip: input.offset,
       });
       success(res, history);
     } catch (err) {

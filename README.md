@@ -61,18 +61,17 @@ AI 辅助的青少年体质健康干预平台
 |------|------|------|
 | Express.js | ^4.21.2 | Web框架 |
 | TypeScript | ^5.4.5 | 类型安全 |
-| PostgreSQL | 15 | 数据库 |
+| SQLite | 3 | 本地数据库（嵌入式，无需单独服务） |
 | Prisma | ^5.14.0 | ORM |
 | JWT | ^9.0.2 | 认证 |
 | Zod | ^3.23.8 | 数据验证 |
-| Socket.IO | - | 实时通信 |
 
 ### AI 服务
 
-| 服务 | 说明 |
-|------|------|
-| Google Gemini AI | 个性化运动建议、健康数据分析 |
-| ML Kit Pose Detection | 实时姿态估计（端侧） |
+| 服务 | 说明 | 状态 |
+|------|------|------|
+| Google Gemini AI | 个性化运动建议、健康数据分析 | 待实现 |
+| ML Kit Pose Detection | 实时姿态估计（端侧） | ✅ 已集成 MediaPipe Pose |
 
 ---
 
@@ -96,9 +95,27 @@ AI 辅助的青少年体质健康干预平台
 │   └── prisma/                 # Prisma 数据库配置
 ├── src/                        # 前端源代码
 │   ├── components/             # 公共组件
+│   │   ├── BottomNav.tsx       # 底部导航
+│   │   ├── QuickStartFAB.tsx   # 快速开始按钮
+│   │   └── SkeletonOverlay.tsx # 骨骼叠加层
 │   ├── context/                # React Context
+│   │   ├── ToastContext.tsx    # 提示消息
+│   │   └── UserContext.tsx     # 用户状态
 │   ├── lib/                    # 工具库
+│   │   ├── api.ts              # API 封装
+│   │   ├── utils.ts            # 工具函数
+│   │   ├── usePoseDetection.ts # 姿势检测Hook
+│   │   └── poseAnalyzer.ts     # 动作分析逻辑
 │   └── pages/                  # 页面组件
+│       ├── Login.tsx           # 登录页面
+│       ├── Training.tsx        # 训练页面
+│       ├── WorkoutSession.tsx  # 训练会话
+│       ├── Stats.tsx           # 数据统计
+│       ├── Fun.tsx             # 趣味活动
+│       ├── Community.tsx       # 社区互动
+│       ├── Redemption.tsx      # 积分兑换
+│       ├── Profile.tsx         # 个人中心
+│       └── Settings.tsx       # 设置页面
 ├── .env                        # 前端环境变量
 ├── package.json
 ├── server/.env                 # 后端环境变量
@@ -109,36 +126,46 @@ AI 辅助的青少年体质健康干预平台
 
 ## 功能模块
 
-### 1. 登录模块 (Login)
+### 1. 登录模块 (Login) ✅
 - 邮箱登录/注册
-- 微信一键登录
+- 微信登录（预留）
 
-### 2. 数据统计 (Stats)
+### 2. 数据统计 (Stats) ✅
 - 运动数据可视化
 - 健康指标展示
+- 周统计数据
 - 进度追踪
 
-### 3. 训练模块 (Training)
+### 3. 训练模块 (Training) ✅
 - 运动计划管理
 - 快速开始训练
 - 训练会话记录
+- 运动项目管理
 
-### 4. 趣味活动 (Fun)
-- 互动游戏
-- 趣味挑战
+### 4. 趣味活动 (Fun) ⚠️
+- 互动游戏框架（待完善）
+- 趣味挑战（待完善）
 
-### 5. 社区互动 (Community)
+### 5. 社区互动 (Community) ✅
 - 动态发布
 - 点赞评论
-- 用户社交
+- 评论列表
 
-### 6. 积分兑换 (Redemption)
+### 6. 积分兑换 (Redemption) ✅
 - 积分系统
 - 礼品兑换
+- 兑换历史
+- 积分历史
 
-### 7. 个人中心 (Profile)
+### 7. 个人中心 (Profile) ✅
 - 用户信息管理
 - 退出登录
+
+### 8. AI动作矫正 ✅
+- 实时姿态检测（MediaPipe Pose）
+- 骨骼关键点可视化
+- 深蹲/弓步/平板支撑/开合跳动作分析
+- 动作评分与矫正建议
 
 ---
 
@@ -153,8 +180,8 @@ AI 辅助的青少年体质健康干预平台
 | 分类 | 技术 | 说明 |
 |------|------|------|
 | **框架** | Express.js + TypeScript | Node.js Web 框架 |
-| **数据库** | PostgreSQL + Prisma | 关系型数据库 + ORM |
-| **缓存** | Redis | 会话缓存、热点数据 |
+| **数据库** | SQLite + Prisma | 嵌入式本地数据库 + ORM（无需单独服务） |
+| **缓存** | Redis | 会话缓存、热点数据（可选） |
 | **认证** | JWT | JSON Web Token |
 | **验证** | Zod | TypeScript 表单验证 |
 | **API文档** | Swagger/OpenAPI | 接口文档生成 |
@@ -341,22 +368,24 @@ src/
 
 ---
 
-#### 2.8 AI服务模块 (AI Service Module)
+#### 2.7 运动分析模块 (Motion Analysis Module) ✅
 
-**职责**：调用外部AI服务
+**职责**：实时姿态检测与动作分析
 
 ```
 src/
-├── services/
-│   └── gemini.service.ts    # Gemini API调用封装
-└── config/
-    └── ai.config.ts         # AI服务配置
+├── lib/
+│   ├── usePoseDetection.ts    # 姿势检测Hook
+│   └── poseAnalyzer.ts         # 动作分析逻辑
+└── components/
+    └── SkeletonOverlay.tsx    # 骨骼绘制组件
 ```
 
 **核心功能**：
-- 个性化运动建议
-- 健康数据分析
-- 运动姿势矫正分析
+- 实时人体33点骨骼关键点检测（MediaPipe Pose）
+- 深蹲、弓步、平板支撑、开合跳等动作分析
+- 动作标准评分与矫正建议
+- 骨骼可视化绘制
 
 ---
 
@@ -485,11 +514,8 @@ NODE_ENV=development
 JWT_SECRET=your-jwt-secret-key
 JWT_EXPIRES_IN=7d
 
-# 数据库配置
-DATABASE_URL=postgresql://user:password@localhost:5432/shuzhiqiangqing
-
-# Redis配置
-REDIS_URL=redis://localhost:6379
+# 数据库配置（SQLite，嵌入式无需单独服务）
+# DATABASE_URL=postgresql://user:password@localhost:5432/shuzhiqiangqing
 
 # AI服务配置
 GEMINI_API_KEY=your-gemini-api-key
@@ -532,13 +558,15 @@ GEMINI_API_KEY=your-gemini-api-key
 
 ### 八、开发实施路径
 
-| 阶段 | 任务 | 说明 |
+| 阶段 | 任务 | 状态 |
 |------|------|------|
-| **Phase 1** | 基础框架搭建 | Express + TypeScript + Prisma |
-| **Phase 2** | 核心业务实现 | 用户、训练、统计模块 |
-| **Phase 3** | JWT认证集成 | 登录/验证逻辑 |
-| **Phase 4** | 安全加固 | Redis黑名单、Rate Limit |
-| **Phase 5** | AI功能集成 | Gemini API调用 |
+| **Phase 1** | 基础框架搭建 | ✅ Express + TypeScript + Prisma |
+| **Phase 2** | 核心业务实现 | ✅ 用户、训练、统计、社区、积分模块 |
+| **Phase 3** | JWT认证集成 | ✅ 登录/验证逻辑 |
+| **Phase 4** | 参数验证完善 | ✅ Zod验证器集成 |
+| **Phase 5** | AI动作矫正 | ✅ MediaPipe Pose姿态检测 |
+| **Phase 6** | AI服务集成 | ⚠️ 待实现（Gemini API调用） |
+| **Phase 7** | 离线同步功能 | ⚠️ 待实现（本地存储+同步机制） |
 
 ---
 
@@ -575,7 +603,7 @@ PORT=3001
 NODE_ENV=development
 JWT_SECRET=your_jwt_secret_key_here
 JWT_EXPIRES_IN=7d
-DATABASE_URL="postgresql://your_connection_string"
+# SQLite 数据库无需配置 DATABASE_URL，使用 schema.prisma 中定义的文件路径
 ```
 
 ### 3. 数据库迁移
@@ -619,8 +647,8 @@ NODE_ENV=development
 JWT_SECRET=your-jwt-secret-key
 JWT_EXPIRES_IN=7d
 
-# 数据库配置
-DATABASE_URL=postgresql://user:password@localhost:5432/shuzhiqiangqing
+# 数据库配置（SQLite，嵌入式无需单独服务）
+# 数据库文件会自动创建在 server/prisma/dev.db
 
 # AI服务配置
 GEMINI_API_KEY=your-gemini-api-key
@@ -774,6 +802,15 @@ GEMINI_API_KEY=your-gemini-api-key
 | 文件/目录 | 说明 |
 |----------|------|
 | `src/App.tsx` | 应用主入口，路由和状态管理 |
+| `src/main.tsx` | 前端应用入口 |
+| `src/pages/` | 页面组件目录 |
+| `src/components/` | 公共组件目录 |
+| `src/context/` | React Context 状态管理 |
 | `server/src/index.ts` | 后端服务入口 |
-| `capacitor.config.ts` | Capacitor 移动端配置 |
+| `server/src/controllers/` | 控制器层 |
+| `server/src/services/` | 业务逻辑层 |
+| `server/src/repositories/` | 数据访问层 |
+| `server/src/validators/` | 参数验证器 |
 | `server/prisma/schema.prisma` | 数据库 Schema |
+| `capacitor.config.ts` | Capacitor 移动端配置 |
+| `vite.config.ts` | Vite 构建配置 |

@@ -50,6 +50,6 @@ app.get('/api/points/history', authMiddleware, redemptionController.getPointsHis
 
 app.use(errorMiddleware);
 
-app.listen(config.port, () => {
-  logger.info(`Server running on port ${config.port}`);
+app.listen(config.port, '0.0.0.0', () => {
+  logger.info(`Server running on port ${config.port} (accessible from network)`);
 });

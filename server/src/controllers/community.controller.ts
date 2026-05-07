@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
 import { communityService } from '../services/community.service';
+import { createPostValidator, createCommentValidator } from '../validators/community.validator';
 import { success, created, badRequest } from '../utils/response';
 
 export const communityController = {
   async createPost(req: Request, res: Response) {
     try {
-      const { content, image, tag, duration } = req.body;
-      const post = await communityService.createPost(req.user!.id, content, image, tag, duration);
+      const input = createPostValidator.parse(req.body);
+      const post = await communityService.createPost(req.user!.id, input.content, input.image, input.tag, input.duration);
       created(res, post);
     } catch (err) {
       badRequest(res, (err as Error).message);
@@ -44,8 +45,8 @@ export const communityController = {
 
   async createComment(req: Request, res: Response) {
     try {
-      const { content } = req.body;
-      const comment = await communityService.createComment(req.user!.id, req.params.id, content);
+      const input = createCommentValidator.parse({ postId: req.params.id, content: req.body.content });
+      const comment = await communityService.createComment(req.user!.id, input.postId, input.content);
       created(res, comment);
     } catch (err) {
       badRequest(res, (err as Error).message);

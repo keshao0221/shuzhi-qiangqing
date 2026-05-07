@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Camera, CameraOff, Sparkles, Activity, Trophy, RefreshCw } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { usePoseDetection } from '@/src/lib/usePoseDetection';
+import { analyzePose, ExerciseType, drawSkeletonOnCanvas } from '@/src/lib/poseAnalyzer';
 
 interface WorkoutSessionProps {
   onBack: () => void;
@@ -18,6 +20,19 @@ export const WorkoutSession: React.FC<WorkoutSessionProps> = ({ onBack }) => {
   const [reps, setReps] = useState(0);
   const [time, setTime] = useState(0);
   const [isTrying, setIsTrying] = useState(false);
+  const [exerciseType] = useState<ExerciseType>('squat');
+  const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
+
+  const { isReady, poseResult, detectPose } = usePoseDetection({
+    runningMode: 'video',
+    numPoses: 1,
+  });
+
+  const lastAnalysisRef = useRef<{ time: number; result: { isCorrect: boolean; score: number } | null }>({
+    time: 0,
+    result: null,
+  });
+  const lastRepStateRef = useRef<boolean>(false);
 
   const requestCameraPermission = async (): Promise<boolean> => {
     try {
@@ -32,6 +47,14 @@ export const WorkoutSession: React.FC<WorkoutSessionProps> = ({ onBack }) => {
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            setVideoSize({
+              width: videoRef.current.videoWidth || 1280,
+              height: videoRef.current.videoHeight || 720,
+            });
+          }
+        };
       }
       setError(null);
       return true;
@@ -86,6 +109,40 @@ export const WorkoutSession: React.FC<WorkoutSessionProps> = ({ onBack }) => {
   };
 
   useEffect(() => {
+    if (isReady && stream && videoRef.current && status === 'active') {
+      detectPose(videoRef.current);
+    }
+  }, [isReady, stream, status, detectPose]);
+
+  useEffect(() => {
+    if (status !== 'active' || !poseResult?.landmarks) return;
+
+    const now = Date.now();
+    const analysis = analyzePose(poseResult.landmarks, exerciseType);
+
+    if (analysis.isCorrect && analysis.score > 60) {
+      const timeDiff = now - lastAnalysisRef.current.time;
+      if (timeDiff > 800) {
+        if (!lastRepStateRef.current) {
+          setReps(r => r + 1);
+          lastRepStateRef.current = true;
+        }
+        setScore(s => s + Math.floor(analysis.score / 5));
+        lastAnalysisRef.current = { time: now, result: analysis };
+      }
+    } else {
+      lastRepStateRef.current = false;
+    }
+
+    if (canvasRef.current && videoRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        drawSkeletonOnCanvas(ctx, poseResult.landmarks, videoSize.width, videoSize.height, true);
+      }
+    }
+  }, [poseResult, status, exerciseType]);
+
+  useEffect(() => {
     startCamera();
 
     return () => {
@@ -118,25 +175,6 @@ export const WorkoutSession: React.FC<WorkoutSessionProps> = ({ onBack }) => {
     };
 
     updateTimer();
-    return () => cancelAnimationFrame(frameId);
-  }, [status]);
-
-  // Simulated AI Logic (No visual skeleton)
-  useEffect(() => {
-    if (status !== 'active') return;
-
-    let frameId: number;
-    
-    const update = () => {
-      // Update score simulated
-      if (Math.random() > 0.985) {
-        setScore(s => s + Math.floor(Math.random() * 10));
-        setReps(r => r + 1);
-      }
-      frameId = requestAnimationFrame(update);
-    };
-
-    update();
     return () => cancelAnimationFrame(frameId);
   }, [status]);
 
@@ -180,12 +218,19 @@ export const WorkoutSession: React.FC<WorkoutSessionProps> = ({ onBack }) => {
       <div className="flex-grow relative overflow-hidden bg-slate-900">
         {!error ? (
           <>
-            <video 
+            <video
               ref={videoRef}
-              autoPlay 
-              playsInline 
-              muted 
+              autoPlay
+              playsInline
+              muted
               className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+            />
+            <canvas
+              ref={canvasRef}
+              width={videoSize.width}
+              height={videoSize.height}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ transform: 'scaleX(-1)' }}
             />
           </>
         ) : (
