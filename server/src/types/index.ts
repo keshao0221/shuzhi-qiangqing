@@ -1,7 +1,10 @@
 export interface User {
   id: string;
+  email?: string;
   phone?: string;
   wechatOpenId?: string;
+  wechatNickname?: string;
+  wechatAvatar?: string;
   name: string;
   avatar?: string;
   points: number;

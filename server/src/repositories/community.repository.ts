@@ -29,7 +29,7 @@ export const communityRepository = {
   
   updatePostLikes: (postId: string, increment: number) =>
     prisma.post.update({
-      where: { postId },
+      where: { id: postId },
       data: { likes: { increment } },
     }),
   

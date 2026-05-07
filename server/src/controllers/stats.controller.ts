@@ -6,32 +6,25 @@ export const statsController = {
   async getUserStats(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      
-      const totalWorkouts = await prisma.workout.count({ where: { userId } });
-      const totalCalories = await prisma.workout.aggregate({
-        where: { userId },
-        _sum: { calories: true },
-      });
-      const totalDistance = await prisma.workout.aggregate({
-        where: { userId },
-        _sum: { distance: true },
-      });
-      const totalSteps = await prisma.workout.aggregate({
-        where: { userId },
-        _sum: { steps: true },
-      });
 
-      const recentWorkouts = await prisma.workout.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: 7,
-      });
+      const [totalWorkouts, totals, recentWorkouts] = await Promise.all([
+        prisma.workout.count({ where: { userId } }),
+        prisma.workout.aggregate({
+          where: { userId },
+          _sum: { calories: true, distance: true, steps: true },
+        }),
+        prisma.workout.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          take: 7,
+        }),
+      ]);
 
       success(res, {
         totalWorkouts,
-        totalCalories: totalCalories._sum.calories || 0,
-        totalDistance: totalDistance._sum.distance || 0,
-        totalSteps: totalSteps._sum.steps || 0,
+        totalCalories: totals._sum.calories || 0,
+        totalDistance: totals._sum.distance || 0,
+        totalSteps: totals._sum.steps || 0,
         recentWorkouts,
       });
     } catch (err) {

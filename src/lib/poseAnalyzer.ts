@@ -38,8 +38,8 @@ const getJointAngles = (landmarks: Landmark[]): JointAngles => {
     rightHip: calculateAngle(landmarks[12], landmarks[24], landmarks[26]),
     leftKnee: calculateAngle(landmarks[23], landmarks[25], landmarks[27]),
     rightKnee: calculateAngle(landmarks[24], landmarks[26], landmarks[28]),
-    leftShoulder: calculateAngle(landmarks[11], landmarks[11], landmarks[13]),
-    rightShoulder: calculateAngle(landmarks[12], landmarks[12], landmarks[14]),
+    leftShoulder: calculateAngle(landmarks[23], landmarks[11], landmarks[13]),
+    rightShoulder: calculateAngle(landmarks[24], landmarks[12], landmarks[14]),
     leftElbow: calculateAngle(landmarks[11], landmarks[13], landmarks[15]),
     rightElbow: calculateAngle(landmarks[12], landmarks[14], landmarks[16]),
   };
@@ -55,7 +55,9 @@ export const analyzeSquat = (landmarks: Landmark[]): AnalysisResult => {
   const leftKneeHeight = landmarks[25].y;
 
   const isTooHigh = leftShoulderHeight < leftHipHeight * 0.9;
-  const isKneeCaved = false;
+  const leftKneeAlign = Math.abs(landmarks[25].x - (landmarks[23].x + landmarks[27].x) / 2);
+  const rightKneeAlign = Math.abs(landmarks[26].x - (landmarks[24].x + landmarks[28].x) / 2);
+  const isKneeCaved = leftKneeAlign > 0.06 || rightKneeAlign > 0.06;
 
   if (avgKneeAngle > 160) {
     return {

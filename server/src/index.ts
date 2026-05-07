@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from './config/app.config';
+import rateLimit from 'express-rate-limit';
+import { config, isDevelopment } from './config/app.config';
 import { authMiddleware } from './middleware/auth.middleware';
 import { errorMiddleware } from './middleware/error.middleware';
 import { authController } from './controllers/auth.controller';
@@ -13,12 +14,29 @@ import { logger } from './utils/logger';
 
 const app = express();
 
-app.use(cors({ origin: '*' }));
+app.use(cors({
+  origin: isDevelopment ? ['http://localhost:3000', 'http://localhost:5173'] : (process.env.CORS_ORIGIN || '*'),
+  credentials: true,
+}));
 app.use(express.json());
 
-app.post('/api/auth/login', authController.login);
-app.post('/api/auth/register', authController.register);
-app.post('/api/auth/wechat/update', authController.updateWechatInfo);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { code: 429, message: '请求过于频繁，请稍后再试' },
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { code: 429, message: '请求过于频繁，请稍后再试' },
+});
+
+app.use('/api', generalLimiter);
+
+app.post('/api/auth/login', authLimiter, authController.login);
+app.post('/api/auth/register', authLimiter, authController.register);
+app.post('/api/auth/wechat/update', authLimiter, authController.updateWechatInfo);
 
 app.get('/api/user/profile', authMiddleware, userController.getProfile);
 app.put('/api/user/profile', authMiddleware, userController.updateProfile);

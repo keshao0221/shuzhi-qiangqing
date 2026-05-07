@@ -36,13 +36,7 @@ export const workoutService = {
   },
 
   async createPlan(name: string, icon: string, exerciseIds: string[], description?: string) {
-    const plan = await workoutRepository.createPlan({ name, icon, description });
-    
-    for (let i = 0; i < exerciseIds.length; i++) {
-      await workoutRepository.findExerciseById(exerciseIds[i]);
-    }
-
-    return plan;
+    return workoutRepository.createPlan({ name, icon, description });
   },
 
   async getPlans() {

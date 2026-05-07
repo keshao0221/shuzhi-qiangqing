@@ -1,20 +1,17 @@
-// API 工具函数
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3001');
 
-// 统一响应格式
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   code: number;
   message: string;
   data?: T;
 }
 
-// 通用请求函数
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -35,36 +32,113 @@ async function request<T>(
   }
 }
 
-// ==================== 用户 API ====================
+// ==================== 类型定义 ====================
 
-// 获取当前用户信息
-export async function getCurrentUser() {
-  if (import.meta.env.DEV) {
-    return request('/api/user/profile');
-  }
-  return request('/api/user/profile', {
-    credentials: 'include',
-  });
+export interface User {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  points: number;
+  height?: number;
+  weight?: number;
+  age?: number;
+  gender?: string;
 }
 
-// 登录
-export async function login(data: { type: 'email' | 'wechat'; email?: string; password?: string; wechatOpenId?: string; wechatNickname?: string; wechatAvatar?: string }) {
-  return request('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export interface Workout {
+  id: string;
+  userId: string;
+  sportType: string;
+  duration: number;
+  calories: number;
+  distance: number;
+  steps: number;
+  avgHeartRate?: number;
+  status: string;
+  createdAt: string;
 }
 
-// 注册
-export async function register(data: { email: string; password: string; name?: string }) {
-  return request('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export interface Exercise {
+  id: string;
+  name: string;
+  sets?: string;
+  reps?: string;
+  time?: string;
+  tag: string;
+  image: string;
 }
 
-// 更新用户信息
-export async function updateUserProfile(data: {
+export interface Plan {
+  id: string;
+  name: string;
+  icon: string;
+  exercises: string[];
+  description?: string;
+}
+
+export interface Post {
+  id: string;
+  user: { name: string; avatar: string };
+  time: string;
+  tag: string;
+  content: string;
+  image?: string;
+  likes: number;
+  comments: number;
+  duration?: string;
+}
+
+export interface Gift {
+  id: string;
+  name: string;
+  image: string;
+  points: number;
+  stock: number;
+  description?: string;
+}
+
+export interface Redemption {
+  id: string;
+  userId: string;
+  giftId: string;
+  status: string;
+  createdAt: string;
+  gift?: Gift;
+}
+
+export interface StatsData {
+  totalWorkouts: number;
+  totalCalories: number;
+  totalDistance: number;
+  totalSteps: number;
+  recentWorkouts: Workout[];
+}
+
+export interface WeeklyStatsData {
+  workouts: number;
+  calories: number;
+  distance: number;
+  steps: number;
+}
+
+export interface LoginInput {
+  type: 'email' | 'wechat';
+  email?: string;
+  password?: string;
+  wechatOpenId?: string;
+  wechatNickname?: string;
+  wechatAvatar?: string;
+}
+
+export interface RegisterInput {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface UpdateProfileInput {
   name?: string;
   email?: string;
   phone?: string;
@@ -73,8 +147,48 @@ export async function updateUserProfile(data: {
   age?: number;
   gender?: string;
   avatar?: string;
-}) {
-  return request('/api/user/profile', {
+}
+
+export interface CreateWorkoutInput {
+  sportType: 'running' | 'swimming' | 'yoga' | 'weight_training' | 'other';
+  duration?: number;
+  calories?: number;
+  distance?: number;
+  steps?: number;
+  avgHeartRate?: number;
+}
+
+export interface CreatePostInput {
+  content: string;
+  image?: string;
+  tag?: string;
+  duration?: string;
+}
+
+// ==================== 用户 API ====================
+
+export async function getCurrentUser() {
+  return request<User>('/api/user/profile', {
+    credentials: import.meta.env.DEV ? undefined : 'include',
+  });
+}
+
+export async function login(data: LoginInput) {
+  return request<{ user: User; token: string }>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function register(data: RegisterInput) {
+  return request<{ user: User; token: string }>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUserProfile(data: UpdateProfileInput) {
+  return request<User>('/api/user/profile', {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -82,24 +196,20 @@ export async function updateUserProfile(data: {
 
 // ==================== 训练 API ====================
 
-// 获取运动列表
 export async function getExercises() {
-  return request('/api/exercises');
+  return request<Exercise[]>('/api/exercises');
 }
 
-// 获取训练计划
 export async function getPlans() {
-  return request('/api/plans');
+  return request<Plan[]>('/api/plans');
 }
 
-// 获取用户训练记录
 export async function getWorkouts() {
-  return request('/api/workouts');
+  return request<Workout[]>('/api/workouts');
 }
 
-// 创建训练记录
-export async function createWorkout(data: any) {
-  return request('/api/workouts', {
+export async function createWorkout(data: CreateWorkoutInput) {
+  return request<Workout>('/api/workouts', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -107,49 +217,46 @@ export async function createWorkout(data: any) {
 
 // ==================== 统计 API ====================
 
-// 获取用户统计数据
 export async function getStats() {
-  return request('/api/stats');
+  return request<StatsData>('/api/stats');
+}
+
+export async function getWeeklyStats() {
+  return request<WeeklyStatsData>('/api/stats/weekly');
 }
 
 // ==================== 社区 API ====================
 
-// 获取帖子列表
 export async function getPosts() {
-  return request('/api/posts');
+  return request<Post[]>('/api/posts');
 }
 
-// 创建帖子
-export async function createPost(data: any) {
-  return request('/api/posts', {
+export async function createPost(data: CreatePostInput) {
+  return request<Post>('/api/posts', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-// 点赞帖子
 export async function likePost(postId: string) {
-  return request(`/api/posts/${postId}/like`, {
+  return request<{ liked: boolean }>(`/api/posts/${postId}/like`, {
     method: 'POST',
   });
 }
 
 // ==================== 积分兑换 API ====================
 
-// 获取礼品列表
 export async function getGifts() {
-  return request('/api/gifts');
+  return request<Gift[]>('/api/gifts');
 }
 
-// 兑换礼品
 export async function redeemGift(giftId: string) {
-  return request('/api/gifts/redeem', {
+  return request<{ message: string }>('/api/gifts/redeem', {
     method: 'POST',
     body: JSON.stringify({ giftId }),
   });
 }
 
-// 获取兑换记录
 export async function getRedemptions() {
-  return request('/api/redemptions');
+  return request<Redemption[]>('/api/redemptions');
 }

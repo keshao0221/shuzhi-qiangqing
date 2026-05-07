@@ -31,7 +31,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 初始化时获取用户信息
   useEffect(() => {
     fetchUser();
   }, []);
@@ -39,33 +38,44 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     try {
       setLoading(true);
-      // 开发模式下模拟自动登录 test01 用户
-      if (import.meta.env.DEV) {
-        // 先尝试从后端获取，失败则使用模拟数据
-        const response = await getCurrentUser();
-        if (response.code === 200 && response.data) {
-          setUser(response.data);
-          setIsLoggedIn(true);
-        } else {
-          // 使用模拟数据
-          const mockUser: User = {
-            id: 'cmojbawkc0000xxnhin2v7i2g',
-            phone: '13800138000',
-            email: 'test@example.com',
-            name: 'test01',
-            avatar: '',
-            points: 1250,
-            height: 175,
-            weight: 65,
-            age: 25,
-            gender: '男',
-          };
-          setUser(mockUser);
-          setIsLoggedIn(true);
-        }
+      const response = await getCurrentUser();
+      if (response.code === 200 && response.data) {
+        setUser(response.data);
+        setIsLoggedIn(true);
+      } else if (import.meta.env.DEV) {
+        const mockUser: User = {
+          id: 'cmojbawkc0000xxnhin2v7i2g',
+          phone: '13800138000',
+          email: 'test@example.com',
+          name: 'test01',
+          avatar: '',
+          points: 1250,
+          height: 175,
+          weight: 65,
+          age: 25,
+          gender: '男',
+        };
+        setUser(mockUser);
+        setIsLoggedIn(true);
       }
     } catch (error) {
       console.error('获取用户信息失败:', error);
+      if (import.meta.env.DEV) {
+        const mockUser: User = {
+          id: 'cmojbawkc0000xxnhin2v7i2g',
+          phone: '13800138000',
+          email: 'test@example.com',
+          name: 'test01',
+          avatar: '',
+          points: 1250,
+          height: 175,
+          weight: 65,
+          age: 25,
+          gender: '男',
+        };
+        setUser(mockUser);
+        setIsLoggedIn(true);
+      }
     } finally {
       setLoading(false);
     }
